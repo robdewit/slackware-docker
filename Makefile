@@ -3,42 +3,52 @@ VERSION		:= $(LATEST)
 VERSIONS	:= 13.37 14.0 14.1 14.2 current
 NAME		:= slackware
 MIRROR		:= http://slackware.osuosl.org
-ifeq ($(shell uname -m),x86_64)
-ARCH := 64
-else ifeq ($(patsubst i%86,x86,$(shell uname -m)),x86)
-ARCH :=
-else ifeq ($(shell uname -m),armv6l)
-ARCH := arm
-else ifeq ($(shell uname -m),aarch64)
-ARCH := arm64
+ifdef ARCH
+SYSARCH		:= $(ARCH)
 else
-ARCH := 64
+SYSARCH		:= $(shell uname -m)
 endif
-RELEASENAME	:= slackware$(ARCH)
+ifeq ($(SYSARCH),x86_64)
+SLACKARCH := 64
+else ifeq ($(patsubst i%86,x86,$(SYSARCH)),x86)
+SLACKARCH :=
+else ifeq ($(SYSARCH),armv6l)
+SLACKARCH := arm
+else ifeq ($(SYSARCH),aarch64)
+SLACKARCH := arm64
+else
+SLACKARCH := 64
+endif
+ifndef TMP
+TMP		:= /tmp
+endif
+RELEASENAME	:= slackware$(SLACKARCH)
 RELEASE		:= $(RELEASENAME)-$(VERSION)
-CACHEFS		:= /tmp/$(NAME)/$(RELEASE)
-ROOTFS		:= /tmp/rootfs-$(RELEASE)
+CACHEFS		:= $(TMP)/$(NAME)/$(RELEASE)
+ROOTFS		:= $(TMP)/rootfs-$(RELEASE)
 #CRT		?= podman
 CRT		?= docker
 
 image: $(RELEASENAME)-$(LATEST).tar
 
 arch:
-	@echo $(ARCH)
+	@echo $(SLACKARCH)
 	@echo $(RELEASE)
 
 $(RELEASENAME)-%.tar: mkimage-slackware.sh
 	sudo \
+		TMP=$(TMP) \
 		VERSION="$*" \
 		USER="$(USER)" \
 		BUILD_NAME="$(NAME)" \
 		bash $<
 
 all: mkimage-slackware.sh
+	TMP=$(TMP); \
 	for version in $(VERSIONS) ; do \
 		$(MAKE) $(RELEASENAME)-$${version}.tar && \
 		$(MAKE) VERSION=$${version} clean && \
-		$(CRT) import -c 'CMD=/bin/sh' $(RELEASENAME)-$${version}.tar $(USER)/$(NAME):$${version} && \
+		$(CRT) import -c 'CMD ["/bin/sh"]' $(RELEASENAME)-$${version}.tar $(USER)/$(NAME):$${version} && \
 		$(CRT) run -i --rm $(USER)/$(NAME):$${version} /usr/bin/echo "$(USER)/$(NAME):$${version} :: Success." ; \
 	done && \
 	$(CRT) tag $(USER)/$(NAME):$(LATEST) $(USER)/$(NAME):latest

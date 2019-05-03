@@ -16,8 +16,8 @@ VERSION=${VERSION:="current"}
 RELEASENAME=${RELEASENAME:-"slackware${ARCH}"}
 RELEASE=${RELEASE:-"${RELEASENAME}-${VERSION}"}
 MIRROR=${MIRROR:-"http://slackware.osuosl.org"}
-CACHEFS=${CACHEFS:-"/tmp/${BUILD_NAME}/${RELEASE}"}
-ROOTFS=${ROOTFS:-"/tmp/rootfs-${RELEASE}"}
+CACHEFS=${CACHEFS:-"${TMP}/${BUILD_NAME}/${RELEASE}"}
+ROOTFS=${ROOTFS:-"${TMP}/rootfs-${RELEASE}"}
 CWD=$(pwd)
 
 base_pkgs="a/aaa_base \
